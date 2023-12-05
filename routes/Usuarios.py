@@ -7,12 +7,16 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from datetime import datetime, timedelta
 from typing import Union
 from jose import jwt, JWTError
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 USUARIOS = APIRouter(
     tags=["Usuarios diario digital"]
 )
-SECRET_KEY = 'ea1de56c16664ed0c16a449b3a2377adde7ef2f7b805fa3f2b99a3d69ecab3c0'
-ALGORITHM = 'HS256'
+SECRET_KEY = os.environ.get("SECRET_KEY")
+ALGORITHM = os.environ.get('ALGORITHM')
 
 oauth2_scheme = OAuth2PasswordBearer("/token")
 
