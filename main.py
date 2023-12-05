@@ -1,9 +1,12 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 import uvicorn
 from routes.Noticias import REGISTROS
-from db.sqlite import CrearTablas
+from routes.Usuarios import USUARIOS
+from db.sqlite import CrearTablas,get_session
+from sqlmodel import Session
 app = FastAPI()
 app.include_router(REGISTROS)
+app.include_router(USUARIOS)
 
 CrearTablas()
 
