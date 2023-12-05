@@ -24,13 +24,12 @@ oauth2_scheme = OAuth2PasswordBearer("/token")
 def create_token(data: dict, time_expire: Union[datetime, None] = None):
     data_copy = data.copy()
     if time_expire is None:
-        expires = datetime.utcnow() + timedelta(minutes = 15)
+        expires = datetime.utcnow() + timedelta(minutes = 30)
     else:
         expires = datetime.utcnow() + time_expire
 
     data_copy.update({'exp':expires})
     jwt_token = jwt.encode(data_copy, key=SECRET_KEY, algorithm=ALGORITHM)
-    print(jwt_token)
 
     return jwt_token
 
@@ -45,7 +44,7 @@ def get_user_current(token: str = Depends(oauth2_scheme),session: Session = Depe
         raise HTTPException(status_code = 401, detail='Credencial invalida.', headers={'WWW-Authenticate': 'Bearer'})
 
     usuario = Usuario.Consultar(username, session)
-    if usuario[0].disabled != 'false':
+    if usuario.disabled != 'false':
         raise HTTPException(status_code = 400, detail = 'Usuario sin permisos')
     return usuario
 
@@ -59,14 +58,15 @@ def user(usuario : str = Depends(get_user_current)):
 def authUser(session: Session = Depends(get_session),form_data: OAuth2PasswordRequestForm = Depends()):
     usuario = Usuario.Consultar(form_data.username, session)
     access_token_expires = timedelta(minutes = 30)
-    access_token_jwt = create_token({'sub':usuario[0].nombre},access_token_expires)
+    access_token_jwt = create_token({'sub':usuario.nombre},access_token_expires)
     if not usuario:
         raise HTTPException(status_code = 401, detail='Usuario inválido.', headers={'WWW-Authenticate': 'Bearer'})
-    if not usuario[0].password == form_data.password:
+    if not usuario.password == form_data.password:
         raise HTTPException(status_code = 401, detail='Contraseña inválida.', headers={'WWW-Authenticate': 'Bearer'})
     return {
         'access_token' : access_token_jwt,
-        'token_type' : 'bearer'
+        'token_type' : 'bearer',
+        'user': usuario
     }
 
 @USUARIOS.get('/usuarios/all')

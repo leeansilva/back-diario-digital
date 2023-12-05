@@ -1,14 +1,29 @@
 from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from routes.Noticias import REGISTROS
 from routes.Usuarios import USUARIOS
 from db.sqlite import CrearTablas,get_session
 from sqlmodel import Session
+
+origins = [
+    "http://localhost",
+    "http://localhost:3000",
+]
+
 app = FastAPI()
+
 app.include_router(REGISTROS)
 app.include_router(USUARIOS)
 
-CrearTablas()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+#CrearTablas()
 
 @app.get("/")
 async def root():
