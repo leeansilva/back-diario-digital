@@ -9,6 +9,7 @@ from typing import Union
 from jose import jwt, JWTError
 import os
 from dotenv import load_dotenv
+import json
 
 load_dotenv()
 
@@ -26,7 +27,7 @@ def create_token(data: dict, time_expire: Union[datetime, None] = None):
     if time_expire is None:
         expires = datetime.utcnow() + timedelta(minutes = 30)
     else:
-        expires = datetime.utcnow() + time_expire
+        expires = datetime.utcnow() + time_expire 
 
     data_copy.update({'exp':expires})
     jwt_token = jwt.encode(data_copy, key=SECRET_KEY, algorithm=ALGORITHM)
@@ -55,14 +56,17 @@ def user(usuario : str = Depends(get_user_current)):
 
 #1er filtro para acceder al token:
 @USUARIOS.post('/token')
-def authUser(session: Session = Depends(get_session),form_data: OAuth2PasswordRequestForm = Depends()):
+def authUser(response : Response , session: Session = Depends(get_session),form_data: OAuth2PasswordRequestForm = Depends()):
     usuario = Usuario.Consultar(form_data.username, session)
     access_token_expires = timedelta(minutes = 30)
-    access_token_jwt = create_token({'sub':usuario.nombre},access_token_expires)
+    access_token_jwt = create_token({'sub':usuario.nombre},access_token_expires) #type: ignore
     if not usuario:
         raise HTTPException(status_code = 401, detail='Usuario inválido.', headers={'WWW-Authenticate': 'Bearer'})
     if not usuario.password == form_data.password:
         raise HTTPException(status_code = 401, detail='Contraseña inválida.', headers={'WWW-Authenticate': 'Bearer'})
+    
+    response.set_cookie(key = 'auth', value = access_token_jwt, samesite = 'none', secure = 'false', expires = 180 )
+    
     return {
         'access_token' : access_token_jwt,
         'token_type' : 'bearer',
@@ -73,14 +77,14 @@ def authUser(session: Session = Depends(get_session),form_data: OAuth2PasswordRe
 def getAllREGISTROS(session: Session = Depends(get_session),usuario_activo : str = Depends(get_user_current)):
     return Usuario.ConsultarTodo(session)
 
-@USUARIOS.get('/usuarios/{name}')
+@USUARIOS.get('/usuarios/{name}')   
 def getUsuario(name: str, session: Session = Depends(get_session), usuario_activo : str = Depends(get_user_current)):
     usuario = Usuario.Consultar(name, session)
     return usuario
 
 @USUARIOS.post('/usuarios')
 def createUsuario(usuario: UsuarioCreacion, session: Session = Depends(get_session),usuario_activo : str = Depends(get_user_current)):
-    usuario = Usuario.Crear(usuario, session)
+    usuario = Usuario.Crear(usuario, session) #type: ignore
     return usuario
 
 @USUARIOS.put('/usuarios/{name}')
