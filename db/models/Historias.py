@@ -3,24 +3,29 @@ from sqlmodel import SQLModel, Session, Field, select, desc
 from typing import Optional, List
 from datetime import datetime
 from sqlalchemy import desc
+import json
+
+class Componente():
+    subtitulo: str
+    descripcion: str
 
 class HistoriaCreacion(SQLModel):
     titulo: str 
-    subtitulo: Optional[str]
-    descripcion: str
+    componentes: str
+    imagen: str
     fuente: str
 
 class HistoriaModificacion(SQLModel):
     titulo: Optional[str] 
-    subtitulo: Optional[str] 
-    descripcion: Optional[str] 
+    componentes: Optional[str] 
+    imagen: str
     fuente: Optional[str] 
 
 class Historia(SQLModel, table=True):
     id : Optional[int] = Field(default=None, primary_key=True)
     titulo: str 
-    subtitulo: Optional[str] 
-    descripcion: str 
+    componentes: str 
+    imagen: str
     fuente: str 
     fecha_inicial: Optional[datetime] = Field(default_factory=datetime.utcnow)
     fecha_actualizacion: datetime = Field(default_factory=datetime.utcnow)
@@ -31,16 +36,35 @@ class Historia(SQLModel, table=True):
         listaHistorias = session.exec(query).all()
         return listaHistorias
     
-    # @classmethod
-    # def Consultar(id : int, session : Session):
-    # 	incidencia = session.get(cls,int(id))
-    # 	if incidencia : return incidencia
-    # 	else : raise HTTPException(status_code=404, detail=f'No se encuentra la incidencia solicitada : ID {id}')
+    @classmethod
+    def Consultar(cls, id: int, session: Session):
+        historia = session.get(cls, int(id))
+        if historia:
+            return historia
+        else:
+            raise HTTPException(status_code=404, detail=f'No se encuentra la historia solicitada : ID {id}')
 
+        
     @classmethod
     def Crear(cls,historia : HistoriaCreacion, session : Session):
         nuevaHistoria = cls.from_orm(historia)
-        print(nuevaHistoria)
+        componentes_recibidos= json.loads(nuevaHistoria.componentes)
+        subtitulos = []
+        descripciones = []
+
+        for componente in componentes_recibidos:
+            subtitulo = componente.get('subtitulo')
+            descripcion = componente.get('descripcion')
+            
+            if subtitulo is not None:
+                subtitulos.append(subtitulo)
+                
+            if descripcion is not None:
+                descripciones.append(descripcion)
+
+        if subtitulos == [] or descripciones == []:
+            raise HTTPException(status_code=422, detail="El campo 'componentes' debe ser una lista de objetos con las claves 'subtitulo' y 'descripcion' como mínimo. [{'subtitulo': 'Ejemplo Subtitulo'}, {'descripcion': 'Ejemplo Descripcion'}]")
+
         session.add(nuevaHistoria)
         session.commit()
         session.refresh(nuevaHistoria)

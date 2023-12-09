@@ -13,9 +13,9 @@ REGISTROS = APIRouter(
 def getAllREGISTROS(session: Session = Depends(get_session)):
     return Historia.ConsultarTodo(session)
 
-# @REGISTROS.get('/registros/{id}')
-# def getRegistro(id: int, session: Session = Depends(get_session)):
-#     return Historia.Consultar(id, session)
+@REGISTROS.get('/registros/{id}')
+def getRegistro(id: int, session: Session = Depends(get_session)):
+    return Historia.Consultar(id, session)
 
 @REGISTROS.post('/registros')
 def createRegistro(registro: HistoriaCreacion, session: Session = Depends(get_session)):
